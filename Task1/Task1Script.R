@@ -1,0 +1,57 @@
+library(lubridate)
+library(tidyverse)
+library(DataExplorer)
+
+#Reading the files
+counties <- read.csv("Task1/95274.csv", header = TRUE, sep=";")
+country <- read.csv("Task1/95276.csv", header = TRUE, sep=";")
+
+# Headers and content in English
+names(counties) <- c("Region", "Date", "Statistic_Variable", "Percentage_Price")
+names(country) <- c("Region", "Date", "Statistic_Variable", "Percentage_Price")
+counties$Statistic_Variable <- recode(counties$Statistic_Variable, "Kapasitetsutnytting av senger (prosent)" = "Beds percentage capacity utilization", "Kapasitetsutnytting av rom (prosent)" = "Rooms percentage capacity utilization", "Pris per rom (kr)" = "Price per room (kr)")
+country$Statistic_Variable <- recode(country$Statistic_Variable, "Kapasitetsutnytting av senger (prosent)" = "Beds percentage capacity utilization", "Kapasitetsutnytting av rom (prosent)" = "Rooms percentage capacity utilization", "Pris per rom (kr)" = "Price per room (kr)")
+
+#Transforming the Date as a Date variable (had to go through the lubridate format because the as.Date function wouldn't want to work because it took the month variable for the date)
+counties$Date <- gsub("M","-",counties$Date)
+counties$Date <- parse_date_time(counties$Date, orders = "Ym")
+counties$Date <- as.Date(counties$Date)
+country$Date <- gsub("M","-",country$Date)
+country$Date <- parse_date_time(country$Date, orders = "Ym")
+country$Date <- as.Date(country$Date)
+
+#Merging the two dataframes
+whole <- bind_rows(counties, country)
+
+#Calculate the difference between county average room price
+#and the national average room price per month
+whole$Percentage_Price <- gsub(",", ".", whole$Percentage_Price)
+whole$Percentage_Price <- as.numeric(whole$Percentage_Price)
+widedf <- whole %>% tidyr::spread(Statistic_Variable, Percentage_Price)
+names(widedf) <- c("Region", "Date", "RPCU", "BPCU", "PPR")
+widedf$PPR <- as.numeric(widedf$PPR)
+widedf %>% filter(widedf$PPR > 0 & widedf$Region != "0 Hele landet") -> meanCounty
+meanCounty <- mean(meanCounty$PPR)
+widedf %>% filter(widedf$PPR > 0 & widedf$Region == "0 Hele landet") -> meanCountry
+meanCountry <- mean(meanCountry$PPR)
+maindifference <- abs(meanCounty - meanCountry)
+
+#What county (on average) has the highest positive and negative difference in price?
+countyaverage <- widedf %>% filter(widedf$PPR > 0) %>% group_by(Region) %>% summarize(meanPPR = mean(PPR), difference = meanPPR - meanCountry) 
+max(countyaverage$difference)
+min(countyaverage$difference)
+
+#Identify the year and county with the highest positive and negative difference.
+countryyear <- widedf %>% mutate(Year = format(Date, "%Y")) %>% filter(widedf$Region == "0 Hele landet" & widedf$PPR != 0) %>% group_by(Year) %>% summarize(YearPPR = sum(PPR)) 
+countryyear <- mean(countryyear$YearPPR)
+countyyearlyaverage <- widedf %>% mutate(Year = format(Date, "%Y")) %>% filter(widedf$Region != "0 Hele landet" & widedf$PPR != 0) %>% group_by(Region, Year) %>% summarize(YearPPR = sum(PPR), difference = YearPPR - countryyear) 
+max(countyyearlyaverage$difference)
+min(countyyearlyaverage$difference)
+
+#Make a plot of the monthly price difference for Troms county from 1999 until today.
+widedf %>% filter(widedf$Region == "19 Troms - Romsa" & Date >= "1999-01-01") %>% mutate(difference = PPR - meanCountry) %>% ggplot(., aes(x=Date, y=difference)) + ylab("Monthly Price Difference") + ggtitle("Monthly price difference for Troms county since 1999") + geom_line(color="red")
+
+#Per county, is there any relationship (correlation) between room capacity and price since January 2010?
+#install.packages("DataExplorer")
+widedf %>% filter(widedf$Region != "0 Hele landet" & Date >= "2010-01-01") -> relationship
+plot_correlation(relationship, type = 'continuous')
