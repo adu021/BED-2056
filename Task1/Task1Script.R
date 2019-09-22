@@ -38,20 +38,20 @@ maindifference <- abs(meanCounty - meanCountry)
 
 #What county (on average) has the highest positive and negative difference in price?
 countyaverage <- widedf %>% filter(widedf$PPR > 0) %>% group_by(Region) %>% summarize(meanPPR = mean(PPR), difference = meanPPR - meanCountry) 
-max(countyaverage$difference)
-min(countyaverage$difference)
+maxdif <- countyaverage %>% filter(countyaverage$difference == max(countyaverage$difference))
+mindif <- countyaverage %>% filter(countyaverage$difference == min(countyaverage$difference))
 
 #Identify the year and county with the highest positive and negative difference.
 countryyear <- widedf %>% mutate(Year = format(Date, "%Y")) %>% filter(widedf$Region == "0 Hele landet" & widedf$PPR != 0) %>% group_by(Year) %>% summarize(YearPPR = sum(PPR)) 
 countryyear <- mean(countryyear$YearPPR)
 countyyearlyaverage <- widedf %>% mutate(Year = format(Date, "%Y")) %>% filter(widedf$Region != "0 Hele landet" & widedf$PPR != 0) %>% group_by(Region, Year) %>% summarize(YearPPR = sum(PPR), difference = YearPPR - countryyear) 
-max(countyyearlyaverage$difference)
-min(countyyearlyaverage$difference)
+maxydif <- countyyearlyaverage %>% ungroup() %>% filter(countyyearlyaverage$difference == max(countyyearlyaverage$difference))
+minydif <- countyyearlyaverage %>% ungroup() %>% filter(countyyearlyaverage$difference == min(countyyearlyaverage$difference))
 
 #Make a plot of the monthly price difference for Troms county from 1999 until today.
-widedf %>% filter(widedf$Region == "19 Troms - Romsa" & Date >= "1999-01-01") %>% mutate(difference = PPR - meanCountry) %>% ggplot(., aes(x=Date, y=difference)) + ylab("Monthly Price Difference") + ggtitle("Monthly price difference for Troms county since 1999") + geom_line(color="red")
+widedf %>% filter(widedf$Region == "19 Troms - Romsa" & Date >= "1999-01-01") %>% mutate(difference = PPR - meanCountry) %>% ggplot(., aes(x=Date, y=difference)) + ylab("Monthly Price Difference") + ggtitle("Monthly price difference for Troms county since 1999") + geom_line(color="#00A1FF")
 
 #Per county, is there any relationship (correlation) between room capacity and price since January 2010?
 #install.packages("DataExplorer")
 widedf %>% filter(widedf$Region != "0 Hele landet" & Date >= "2010-01-01") -> relationship
-plot_correlation(relationship, type = 'continuous')
+plot_correlation(relationship, type = 'continuous', title="Is there a link between Room Capacity and Price ?")
