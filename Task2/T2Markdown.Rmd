@@ -1,0 +1,67 @@
+---
+title: ""
+output: html_document
+css: "CSS.css"
+---
+<br><br><br><br><br><br><br><br><br><br><br><br><br>
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+#Necessary libraries
+library(rvest)
+library(tidyverse)
+library(lubridate)
+```
+
+```{r, include=FALSE}
+#Getting the data from the URL page
+original <- read_html("https://w2.brreg.no/kunngjoring/kombisok.jsp?datoFra=01.01.2019&datoTil=07.10.2019&id_region=100&id_fylke=-+-+-&id_niva1=2&id_bransje1=0")
+original <- html_nodes(original, xpath = "//table")
+original <- html_nodes(original, 'table')
+original <- html_nodes(original, xpath = "//p")
+
+#Transforming it in a text, then a list
+test <- html_text(original)
+testlist <- as.list(test)
+
+#Separate the list in 3, one for each region
+listnordland <- testlist[sum(grep("Nordland", testlist)+2):sum(grep("Troms", testlist)-2)]
+listtroms <- testlist[sum(grep("Troms", testlist)+2):sum(grep("Finnmark", testlist)-2)]
+listfinnmark <- testlist[sum(grep("Finnmark", testlist)+2):length(testlist)]
+
+#Making a dataframe for each region, cleaning useless information while adding a Region one, and renaming Names and Date columns
+dfnord <- data.frame(matrix(listnordland, ncol=7, byrow=T))
+dfnord <- dfnord[,c(1,3)]
+names(dfnord) <- c("Name", "Date")
+dfnord <- dfnord %>% mutate("Region" = "Nordland")
+
+dftroms <- data.frame(matrix(listtroms, ncol=7, byrow=T))
+dftroms <- dftroms[,c(1,3)]
+names(dftroms) <- c("Name", "Date")
+dftroms <- dftroms %>% mutate("Region" = "Troms")
+
+dffinn <- data.frame(matrix(listfinnmark, ncol=7, byrow=T))
+dffinn <- dffinn[,c(1,3)]
+names(dffinn) <- c("Name", "Date")
+dffinn <- dffinn %>% mutate("Region" = "Finnmark")
+
+#Binding the three databases into one
+dffull <- bind_rows(dfnord, dftroms, dffinn)
+dffull$Date <- dmy(dffull$Date)
+dffull <- dffull %>% mutate("Month" = month(dffull$Date, label = TRUE, abbr = FALSE))
+
+#Summarizing: the number of registered companies by region and by month
+dfsummary <- dffull %>% group_by(Region, Month) %>% summarize(., "Number" = n())
+best <- dfsummary %>% filter(Number == max(dfsummary$Number)) %>% collect()
+best$Month <- gsub("janvier", "January", best$Month)
+```
+<center><h1>Study of the newly registered companies in Northern Norway</h1><br></center>
+<p>A total of <b>`r sum(dfsummary$Number)`</b> companies were registered in Northern Norway from the first of January 2019 up until the 7th of October 2019.</p><br>
+<center>
+```{r}
+#Making it into a bar plot
+ggplot(dfsummary, aes(x=Month, y=Number, color=Region)) + geom_col(fill="white") + ylab("Newly registered companies") + ggtitle("Newly registered companies in 2019") + scale_color_grey() + theme_classic() + theme(legend.position = "bottom")
+```
+</center><br>
+<p>The region that seems to <b>get most of the newly registered companies</b> every month is <b>Nordland</b>, whereas <b>Finnmark</b> has the <b>lowest amount of companies</b> every month.</p><br>
+<p>The most registrations there was in one month is <b>`r max(dfsummary$Number)` registrations</b> for the month of <b>`r best$Month`</b> 2019 of the <b>`r best$Region` region</b>.</p><br>

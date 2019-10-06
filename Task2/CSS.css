@@ -1,0 +1,20 @@
+h1 {
+	font-family: "Lucida Grande", sans-serif;
+	font-weight: 600;
+	text-align: center;
+	text-transform: uppercase;
+ }
+ 
+p {
+	letter-spacing: 1px;
+	text-indent: 30px;
+	text-align: justify;
+	font-family: "Lucida Grande", sans-serif;
+}
+
+body {
+    background-image: url('header.png');
+    background-size: 100% 25%;
+    background-attachment: local;
+    background-repeat: no-repeat;
+}
