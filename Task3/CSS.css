@@ -1,0 +1,41 @@
+h1 {
+	font-family: "Lucida Grande", sans-serif;
+	font-weight: 600;
+	text-align: center;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	text-indent: 30px;
+	color: #B3B5FF;
+ }
+ 
+h2 {
+	font-family: "Lucida Grande", sans-serif;
+	font-weight: 500;
+	text-align: center;
+	letter-spacing: 1px;
+	text-indent: 30px;
+	text-transform: uppercase;
+ }
+ 
+p {
+	letter-spacing: 1px;
+	text-indent: 30px;
+	text-align: justify;
+	font-family: "Lucida Grande", sans-serif;
+}
+
+body {
+    background-image: url('header.png');
+    background-size: 100% 250px;
+    background-attachment: local;
+    background-repeat: no-repeat;
+}
+
+fieldset {
+	padding:10px 10px 10px 10px;
+	border:1px solid #B3B5FF;
+}
+
+b {
+	color: #B3B5FF;
+}

@@ -1,0 +1,123 @@
+---
+title: ""
+output: html_document
+css: "CSS.css"
+---
+<br><br><br><br><br><br><br><br><br><br><br><br><br>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+#Necessary libraries
+library(readr)
+library(dplyr)
+library(scales)
+library(tidyverse)
+library(lubridate)
+library(ggthemes)
+
+# Loading the number of births, only keeping important information for the study : sex, birth weight and birth month
+if(isTRUE(getOption('knitr.in.progress'))) {
+  births2018 <-
+  read_fwf("../Task3/Nat2018PublicUS.c20190509.r20190717.txt",
+           fwf_positions(start = c(475,504,13,9),
+                         end = c(475,507,14,12),
+                         col_names = c("Sex","Weight","Month","Year")
+           )
+  )
+  births2017 <-
+  read_fwf("../Task3/Nat2017PublicUS.c20180516.r20180808.txt",
+           fwf_positions(start = c(475,504,13,9),
+                         end = c(475,507,14,12),
+                         col_names = c("Sex","Weight","Month","Year")
+           )
+  )
+} else {
+  births2018 <-
+  read_fwf("Task3/Nat2018PublicUS.c20190509.r20190717.txt",
+           fwf_positions(start = c(475,504,13,9),
+                         end = c(475,507,14,12),
+                         col_names = c("Sex","Weight","Month","Year")
+           )
+  )
+  births2017 <-
+  read_fwf("Task3/Nat2017PublicUS.c20180516.r20180808.txt",
+           fwf_positions(start = c(475,504,13,9),
+                         end = c(475,507,14,12),
+                         col_names = c("Sex","Weight","Month","Year")
+           )
+  )  
+}
+
+# Merging the two
+full <- bind_rows(births2017, births2018)
+```
+
+<center><h1>Study on the births in the USA from 2017 to 2018</h1><br></center>
+
+<fieldset><center><h2>What is the proportion of boys and girls? Has it changed between 2017 and 2018?</h2><br>
+```{r}
+# Summarizing for sex and year for comparison
+compsy <- full %>% group_by(Sex, Year) %>% summarize("Number" = n())
+compsy <- compsy %>% group_by(Year) %>% mutate(Total=sum(Number), Ratio=Number*100/Total)
+compsy$Year <- as.character(compsy$Year)
+
+# Plot it, for better visualization
+ggplot(compsy, aes(x = Year, y = Ratio, fill = Sex)) +
+  geom_bar(stat = "identity", width = .6) +
+  coord_flip() +
+  ggtitle("Proportion of births of boys and girls for 2017 and 2018") +
+  ylab("Percentage") +
+  theme(plot.title = element_text(hjust = .5), 
+        axis.ticks = element_blank()) + 
+  scale_fill_brewer(palette = "Purples") +
+  theme_hc()
+
+# Average birth weight (excluding not informed weight || Weight == 9999)
+full$Weight <- as.numeric(full$Weight)
+avbirweight <- mean(full$Weight[full$Weight!=9999])
+```
+</center>
+<p>The number of births of boys seems to be pretty similar to the number of births of girls, <b>as `r compsy$Ratio[[1]]` % of the births in 2017 were girls</b>, and <b>`r compsy$Ratio[[3]]` % were boys.</b></p><br>
+<p>In 2018, the <b>results were similar to those of 2017</b>, as `r compsy$Ratio[[4]]` % of the births were boys and `r compsy$Ratio[[2]]` % were girls.</p><br>
+
+<center><h2>What is the average birth weight in grams?</h2><br></center>
+
+<p>The average birth weight of the children in the USA is <b>`r round(avbirweight, digits=0)` grams</b>, which corresponds to <b>`r round(avbirweight, digits=0)/1000` kilograms.</b></p>
+</fieldset><br>
+
+<fieldset><center><h2>Density plot of the birth weight per sex in 2018</h2><br>
+
+```{r}
+#Density plot - Weight by sex in 2018
+births2018$Weight <- as.numeric(births2018$Weight)
+ggplot(births2018, aes(x=round(Weight, digits=1), fill=Sex)) + 
+  geom_density(alpha=0.4) +
+  ggtitle("Density of birth weight per sex in 2018") +
+  xlab("Weight (rounded to the first digit)") +
+  ylab("Density") +
+  theme_hc() +
+  scale_fill_brewer(palette = "Purples") +
+  scale_x_log10()
+```
+</center>
+<p>It can be seen that both sex <b>approximately share similar weight at birth</b>. There does not seem to be a big difference between boys and girls: <b>neither is heavier than the other at birth</b>.</p>
+</fieldset><br>
+
+<fieldset><center><h2>What is the proportion of boys and girls? Has it changed between 2017 and 2018?</h2><br>
+```{r}
+#Does the average birth weight vary by month and year?
+abwmy <- full %>% group_by(Year, Month) %>% summarize("Average_Birth_Weight" = mean(Weight))
+abwmy$Month <- as.numeric(abwmy$Month)
+abwmy$Year <- as.character(abwmy$Year)
+ggplot(abwmy, aes(x=Month, y=Average_Birth_Weight, color=Year)) +
+  geom_line(size=2) +
+  ggtitle("Average birth weight per month") +
+  xlab("Month") +
+  ylab("Average Birth Weight") +
+  scale_color_brewer(palette = "Purples") +
+  theme_hc()
+```
+</center>
+<p><b>Average birth weight seems to vary very little from years to years</b> and also seems to <b>follow the same trend</b>: for example, the average birth weight is lower in January and December in both years, compared to the other months.</p>
+</fieldset><br>
