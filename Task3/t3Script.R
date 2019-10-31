@@ -25,14 +25,14 @@ library(ggthemes)
 
 # Merging the two
 full <- bind_rows(births2017, births2018)
-save("full", file="Task3/fullbirths.RData")
+#save("full", file="Task3/fullbirths.RData")
 
 # Summarizing for sex and year for comparison
 compsy <- full %>% group_by(Sex, Year) %>% summarize("Number" = n())
 compsy <- compsy %>% group_by(Year) %>% mutate(Total=sum(Number), Ratio=Number*100/Total)
 compsy$Year <- as.character(compsy$Year)
 
-# Plot it, for betteer visualization
+# Plot it, for better visualization
 ggplot(compsy, aes(x = Year, y = Ratio, fill = Sex)) +
   geom_bar(stat = "identity", width = .6) +
   coord_flip() +
