@@ -7,24 +7,25 @@ library(ggthemes)
 
 # Loading the number of births, only keeping important information for the study : sex, birth weight and birth month
 
-births2018 <-
-  read_fwf("Task3/Nat2018PublicUS.c20190509.r20190717.txt",
-           fwf_positions(start = c(475,504,13,9),
-                         end = c(475,507,14,12),
-                         col_names = c("Sex","Weight","Month","Year")
-           )
-  )
+#births2018 <-
+#  read_fwf("Task3/Nat2018PublicUS.c20190509.r20190717.txt",
+#           fwf_positions(start = c(475,504,13,9),
+#                         end = c(475,507,14,12),
+#                         col_names = c("Sex","Weight","Month","Year")
+#           )
+#  )
 
-births2017 <-
-  read_fwf("Task3/Nat2017PublicUS.c20180516.r20180808.txt",
-           fwf_positions(start = c(475,504,13,9),
-                         end = c(475,507,14,12),
-                         col_names = c("Sex","Weight","Month","Year")
-           )
-  )
+#births2017 <-
+#  read_fwf("Task3/Nat2017PublicUS.c20180516.r20180808.txt",
+#           fwf_positions(start = c(475,504,13,9),
+#                         end = c(475,507,14,12),
+#                         col_names = c("Sex","Weight","Month","Year")
+#           )
+#  )
 
 # Merging the two
 full <- bind_rows(births2017, births2018)
+save("full", file="Task3/fullbirths.RData")
 
 # Summarizing for sex and year for comparison
 compsy <- full %>% group_by(Sex, Year) %>% summarize("Number" = n())
