@@ -1,0 +1,72 @@
+---
+title: ''
+output: html_document
+css: "CSS.css"
+---
+<br><br><br><br><br><br><br><br><br><br><br><br><br>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE)
+
+#Useful libraries
+library(dplyr)
+library(lubridate)
+library(tidyverse)
+library(ggthemes)
+
+#Introducing data
+
+if(isTRUE(getOption('knitr.in.progress'))) { 
+  storedata <- read.csv("../Task4/storedata.csv")
+} else {
+  storedata <- read.csv("Task4/storedata.csv")
+}
+```
+<center><h1>Company sales study</h1><br></center>
+
+<fieldset><center><h2>Corporate and Consumer total sales for the last three monthes of 2017 in regions 1 and 9</h2><br>
+```{r}
+#Table1 - total Sales by month, for Region 1 and Region 9 in the Customer_Segment, Corporate and Consumer for the last 3 monthes of 2017
+storedata$Order_Date <- as.Date(storedata$Order_Date)
+table1 <- storedata %>% filter(year(Order_Date) == 2017 & month(Order_Date) >= 10) %>% filter(Region == "Region 1" | Region == "Region 9") %>% filter(Customer_Segment == "Corporate" | Customer_Segment == "Consumer")
+table1 <- table1 %>% mutate(Month = month(Order_Date))
+table1 <- table1 %>% group_by(Month, Region, Customer_Segment) %>% summarize(Total_Sales = sum(Sales))
+ggplot(table1, aes(x=Month, y=Total_Sales, color = Customer_Segment)) + geom_line(size = 1.3) + facet_wrap(~Region) + ggtitle("Total sales for the last three months of 2017 in regions 1 and 9") + xlab("Months") + ylab("Total Sales") + labs(color = "Customer Segment") + theme_stata() + scale_color_brewer(palette = "Greens") 
+```
+<br></center></fieldset><br>
+
+<fieldset><center><h2>Sales study in regions 1 and 13 from 2015 to 2017</h2><br>
+```{r}
+#Figure1 - total Sales in Region 1 and Region 13 in 2015, 2016 and 2017
+tabfig1 <- storedata %>% filter(Region == "Region 1" | Region == "Region 13") %>% mutate(Year = year(Order_Date), Month = month(Order_Date)) %>% filter(Year != 2014) %>% group_by(Year, Month, Region) %>% summarize(Total_Sales = sum(Sales))
+tabfig1$Total_Sales <- as.numeric(tabfig1$Total_Sales)
+tabfig1 <- tabfig1 %>% mutate(Year_Month = paste(Year, Month, "01", sep="-"))
+tabfig1$Year_Month <- as.Date(tabfig1$Year_Month, format="%Y-%m-%d")
+tabfig1 <- tabfig1[,c(3:5)]
+figure1 <- ggplot(tabfig1, aes(x=Year_Month, y=Total_Sales, color = Region)) + geom_line(size = 1.3) + ggtitle("Total sales for region 1 and 13, from 2015 to 2018 excluded") + xlab("Year") + ylab("Total Sales") + theme_stata() + scale_color_brewer(palette = "Greens")
+figure1
+```
+</center><br>
+<p>At first sight, it can be seen that <b>Region 1 seems to make more total sales than Region 13</b> on the span of these 3 years.</p><br>
+
+```{r}
+#Table2 - the months where the total Sales in Region 13 is greater than the total Sales in Region 1
+table2 <- tabfig1 %>% spread(Region, Total_Sales)
+names(table2) <- c("Total_Sales", "Region_1", "Region_13")
+table2 <- table2 %>% filter(Region_13 > Region_1)
+names(table2) <- c("Date", "Total sales in Region 1", "Total sales in Region 13")
+table2
+```
+<br><p>However, it can be seen with this table that <b>sometimes, Region 13 makes more sales</b> than Region 1.</p>
+</fieldset><br>
+
+<fieldset><center><h2>Study on the average profit for most regions</h2><br>
+```{r}
+#Table3 - average Profit per Customer_Segment and Product_Category in 2017, for all regions except Region 3, 5 and 8
+table3 <- storedata %>% filter(year(Order_Date) == 2017, Region != "Region 3", Region != "Region 5", Region != "Region 8") %>% group_by(Customer_Segment, Product_Category) %>% summarize(Average_Profit = mean(Profit))
+maxtable3 <- table3 %>% ungroup() %>% filter(Average_Profit == max(Average_Profit))
+ggplot(table3, aes(x = Product_Category, y = Average_Profit, fill=Product_Category)) + geom_histogram(stat="identity") + facet_wrap(~Customer_Segment) + ggtitle("Average profit by customer segment and product category in 2017") + ylab("Average Profit") + labs(fill = "Product Category") + theme_stata() + theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank()) + scale_fill_brewer(palette = "Greens")
+```
+<br><br><p>Through this graph, it is possible to see that the product category that brings in the <b>most profit is Technology</b>.</p>
+<p>It can also be seen that the customer segment that produced the <b>highest average profit is the `r maxtable3$Customer_Segment` segment</b>.</p>
+</fieldset><br>
