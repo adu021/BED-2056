@@ -13,6 +13,7 @@ library(dplyr)
 library(lubridate)
 library(tidyverse)
 library(ggthemes)
+library(forecast)
 
 #Introducing data
 
@@ -69,4 +70,12 @@ ggplot(table3, aes(x = Product_Category, y = Average_Profit, fill=Product_Catego
 ```
 <br><br><p>Through this graph, it is possible to see that the product category that brings in the <b>most profit is Technology</b>.</p>
 <p>It can also be seen that the customer segment that produced the <b>highest average profit is the `r maxtable3$Customer_Segment` segment</b>.</p>
+</fieldset><br>
+
+<fieldset><center><h2>ARIMA</h2><br>
+```{r}
+model1416 <- storedata %>% filter(year(Order_Date) < 2017) %>% filter(Customer_Segment == "Small Business" & Product_Category == "Office Supplies")
+sarima <- Arima(model1416$Order_Quantity, order=c(3,1,2), seasonal=list(order = c(1,1,2), period = 12))
+sarima %>% forecast(h=200) %>% autoplot() + theme_stata()
+```
 </fieldset><br>
